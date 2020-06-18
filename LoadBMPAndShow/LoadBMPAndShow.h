@@ -86,22 +86,11 @@ bool readBmp(char *bmpName)
 
 //用于显示窗体的全局变量
 //----------------------------------
-const int SCREEN_WIDTH = 800;
-const int SCREEN_HEIGHT = 600;
+
 const int bits = 24;
-extern BYTE buffer[SCREEN_WIDTH*SCREEN_HEIGHT*bits / 8];
+extern BYTE* buffer;
 
 
-//-----------------------------------
-
-//用于处理排序数据的全局变量
-//-----------------------------------
-const int DataSum = SCREEN_WIDTH;
-extern int DataMax;
-extern int DataMin;
-extern int data[DataSum];
-extern int nowIndex;
-//-----------------------------------
 
 
 class Color
@@ -121,25 +110,25 @@ void PutBufferToScreen();
 
 void DrawPoint(int x, int y, const Color color)
 {
-	if (x <= 0 || x >= SCREEN_WIDTH)return;
-	if (y <= 0 || y >= SCREEN_HEIGHT)return;
+	if (x <= 0 || x >= bmpWidth)return;
+	if (y <= 0 || y >= bmpHeight)return;
 
-	buffer[int(y) * SCREEN_WIDTH * 3 + (int(x) + 1) * 3 - 1] = color.r;
-	buffer[int(y) * SCREEN_WIDTH * 3 + (int(x) + 1) * 3 - 2] = color.g;
-	buffer[int(y) * SCREEN_WIDTH * 3 + (int(x) + 1) * 3 - 3] = color.b;
+	buffer[int(y) * bmpWidth * 3 + (int(x) + 1) * 3 - 1] = color.r;
+	buffer[int(y) * bmpWidth * 3 + (int(x) + 1) * 3 - 2] = color.g;
+	buffer[int(y) * bmpWidth * 3 + (int(x) + 1) * 3 - 3] = color.b;
 }
 
 
 void CleanScreen()
 {
-	for (int y = 0; y < SCREEN_HEIGHT; y++)
+	for (int y = 0; y < bmpHeight; y++)
 	{
-		for (int x = 0; x < SCREEN_WIDTH; x++)
+		for (int x = 0; x < bmpWidth; x++)
 		{
 
-			buffer[int(y) * SCREEN_WIDTH * 3 + (int(x) + 1) * 3 - 1] = 0;
-			buffer[int(y) * SCREEN_WIDTH * 3 + (int(x) + 1) * 3 - 2] = 0;
-			buffer[int(y) * SCREEN_WIDTH * 3 + (int(x) + 1) * 3 - 3] = 0;
+			buffer[int(y) * bmpWidth * 3 + (int(x) + 1) * 3 - 1] = 0;
+			buffer[int(y) * bmpWidth * 3 + (int(x) + 1) * 3 - 2] = 0;
+			buffer[int(y) * bmpWidth * 3 + (int(x) + 1) * 3 - 3] = 0;
 		}
 	}
 }

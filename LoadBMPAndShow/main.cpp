@@ -20,7 +20,7 @@ bool read()
 }
 
 
-BYTE buffer[SCREEN_WIDTH*SCREEN_HEIGHT*bits / 8];
+BYTE* buffer;
 
 HDC screen_hdc;
 HDC hCompatibleDC;
@@ -59,14 +59,15 @@ LRESULT CALLBACK WindowProc(
 
 void PutBufferToScreen()
 {
-	SetDIBits(screen_hdc, hCompatibleBitmap, 0, SCREEN_HEIGHT, buffer, (BITMAPINFO*)&binfo, DIB_RGB_COLORS);
-	BitBlt(screen_hdc, -1, -1, SCREEN_WIDTH, SCREEN_HEIGHT, hCompatibleDC, 0, 0, SRCCOPY);
+	SetDIBits(screen_hdc, hCompatibleBitmap, 0, bmpHeight, buffer, (BITMAPINFO*)&binfo, DIB_RGB_COLORS);
+	BitBlt(screen_hdc, -1, -1, bmpWidth, bmpHeight, hCompatibleDC, 0, 0, SRCCOPY);
 }
 
 int main()
 {
 	if (read())
 	{
+		buffer = (BYTE*)malloc(sizeof(BYTE) * bmpWidth * bmpHeight * bits / 8);
 		hInstance = GetModuleHandle(NULL);
 
 		Draw.cbClsExtra = 0;
@@ -88,8 +89,8 @@ int main()
 			WS_OVERLAPPEDWINDOW,
 			38,
 			20,
-			SCREEN_WIDTH + 15,
-			SCREEN_HEIGHT + 38,
+			bmpWidth + 15,
+			bmpHeight + 38,
 			NULL,
 			NULL,
 			hInstance,
@@ -103,15 +104,15 @@ int main()
 		ZeroMemory(&binfo, sizeof(BITMAPINFO));
 		binfo.bmiHeader.biBitCount = bits;
 		binfo.bmiHeader.biCompression = BI_RGB;
-		binfo.bmiHeader.biHeight = -SCREEN_HEIGHT;
+		binfo.bmiHeader.biHeight = -bmpHeight;
 		binfo.bmiHeader.biPlanes = 1;
 		binfo.bmiHeader.biSizeImage = 0;
 		binfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-		binfo.bmiHeader.biWidth = SCREEN_WIDTH;
+		binfo.bmiHeader.biWidth = bmpWidth;
 
 		screen_hdc = GetDC(hwnd);
 		hCompatibleDC = CreateCompatibleDC(screen_hdc);
-		hCompatibleBitmap = CreateCompatibleBitmap(screen_hdc, SCREEN_WIDTH, SCREEN_HEIGHT);
+		hCompatibleBitmap = CreateCompatibleBitmap(screen_hdc, bmpWidth, bmpHeight);
 		hOldBitmap = (HBITMAP)SelectObject(hCompatibleDC, hCompatibleBitmap);
 
 		while (1)
