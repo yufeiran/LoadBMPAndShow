@@ -1,15 +1,67 @@
 ﻿#include"LoadBMPAndShow.h"
 
-bool read()
-{
-	char readPath[999];
-	cout << "Enter file name:";
-	cin >> readPath;
 
-	if (readBmp(readPath))
+bool readPPM(const string filepath)
+{
+	ifstream is(filepath,ios::in);
+	cout << "readPPM :" << filepath << endl;
+	if (is.is_open() == false)return false;
+
+	string type;
+	is >> type;
+	if (type == "p3") {
+		is >> picWidth >> picHeight;
+
+		int colorMax;
+		is >> colorMax;
+		if (colorMax != 255)return false;
+		pBmpBuf=new unsigned char[picWidth * picHeight*3];
+		for (int i = picHeight-1; i >=0 ; --i) {
+			for (int j = 0; j < picWidth; ++j) {
+				int nowPos = i * picWidth + j;
+				int nowData;
+				is >> nowData;
+				//cout << nowData << " ";
+				pBmpBuf[nowPos * 3] =static_cast<unsigned char>(nowData);
+				is >> nowData;
+				//cout << nowData << " ";
+				pBmpBuf[nowPos * 3 + 1] = static_cast<unsigned char>(nowData);
+				is >> nowData;
+				//cout << nowData << endl;
+				pBmpBuf[nowPos * 3 + 2] = static_cast<unsigned char>(nowData);
+
+			}
+		}
+		return true;
+	}
+	else {
+		return false;
+	}
+
+
+}
+
+
+bool readFromCmd(const string filepath)
+{
+	if ((filepath.find("ppm") != string::npos)|( filepath.find("txt") != string::npos)) {
+		if (readPPM(filepath))
+		{
+			cout << "readOK!" << endl;
+			cout << "\nwidth=" << picWidth << "\nheight=" << picHeight << endl;
+			return true;
+		}
+		else
+		{
+			cout << "file no found!" << endl;
+			return false;
+		}
+	}
+
+	if (readBmp(filepath.c_str()))
 	{
 		cout << "readOK!" << endl;
-		cout << "\nwidth=" << bmpWidth << "\nheight=" << bmpHeight << endl;
+		cout << "\nwidth=" << picWidth << "\nheight=" << picHeight << endl;
 		return true;
 	}
 	else
@@ -18,6 +70,21 @@ bool read()
 		return false;
 	}
 }
+
+bool read()
+{
+	char readPath[999];
+	cout << "Enter file name:";
+	cin >> readPath;
+
+	if (readFromCmd(readPath)) {
+		return true;
+	}
+	else {
+		return false;
+	}
+}
+
 
 
 BYTE* buffer;
@@ -33,6 +100,8 @@ WNDCLASS Draw;
 HWND hwnd;
 MSG msg;
 
+bool isGameOver = false;
+
 
 LRESULT CALLBACK WindowProc(
 	_In_	HWND hwnd,
@@ -46,6 +115,7 @@ LRESULT CALLBACK WindowProc(
 	case WM_DESTROY:
 	{
 		PostQuitMessage(0);
+		isGameOver = true;
 		return 0;
 	}
 	case WM_KEYDOWN:
@@ -59,76 +129,83 @@ LRESULT CALLBACK WindowProc(
 
 void PutBufferToScreen()
 {
-	SetDIBits(screen_hdc, hCompatibleBitmap, 0, bmpHeight, buffer, (BITMAPINFO*)&binfo, DIB_RGB_COLORS);
-	BitBlt(screen_hdc, -1, -1, bmpWidth, bmpHeight, hCompatibleDC, 0, 0, SRCCOPY);
+	SetDIBits(screen_hdc, hCompatibleBitmap, 0, picHeight, buffer, (BITMAPINFO*)&binfo, DIB_RGB_COLORS);
+	BitBlt(screen_hdc, -1, -1, picWidth, picHeight, hCompatibleDC, 0, 0, SRCCOPY);
 }
 
-int main()
+int main(int argc,char* argv[])
 {
-	if (read())
-	{
-		buffer = (BYTE*)malloc(sizeof(BYTE) * bmpWidth * bmpHeight * bits / 8);
-		hInstance = GetModuleHandle(NULL);
-
-		Draw.cbClsExtra = 0;
-		Draw.cbWndExtra = 0;
-		Draw.hCursor = LoadCursor(hInstance, IDC_ARROW);
-		Draw.hIcon = LoadIcon(hInstance, IDI_APPLICATION);
-		Draw.lpszMenuName = NULL;
-		Draw.style = WS_MINIMIZEBOX | CS_HREDRAW | CS_VREDRAW;
-		Draw.hbrBackground = (HBRUSH)COLOR_WINDOW;
-		Draw.lpfnWndProc = WindowProc;
-		Draw.lpszClassName = _T("DDraw");
-		Draw.hInstance = hInstance;
-
-		RegisterClass(&Draw);
-
-		hwnd = CreateWindow(
-			_T("DDraw"),
-			L"Draw",
-			WS_OVERLAPPEDWINDOW,
-			38,
-			20,
-			bmpWidth + 15,
-			bmpHeight + 38,
-			NULL,
-			NULL,
-			hInstance,
-			NULL
-		);
-
-		ShowWindow(hwnd, SW_SHOW);
-		UpdateWindow(hwnd);
-
-		//init bitbuffer
-		ZeroMemory(&binfo, sizeof(BITMAPINFO));
-		binfo.bmiHeader.biBitCount = bits;
-		binfo.bmiHeader.biCompression = BI_RGB;
-		binfo.bmiHeader.biHeight = -bmpHeight;
-		binfo.bmiHeader.biPlanes = 1;
-		binfo.bmiHeader.biSizeImage = 0;
-		binfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-		binfo.bmiHeader.biWidth = bmpWidth;
-
-		screen_hdc = GetDC(hwnd);
-		hCompatibleDC = CreateCompatibleDC(screen_hdc);
-		hCompatibleBitmap = CreateCompatibleBitmap(screen_hdc, bmpWidth, bmpHeight);
-		hOldBitmap = (HBITMAP)SelectObject(hCompatibleDC, hCompatibleBitmap);
-
-		while (1)
+	if (argc == 2) {
+		if (readFromCmd(argv[1]) == false)
 		{
-			if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
-			{
-				TranslateMessage(&msg);
-				DispatchMessage(&msg);
-			}
-			GameLoop();
+			return -1;
 		}
 	}
-	else
+	else {
+		if (read()==false)
+		{
+			return -1;
+		}
+	}
+
+
+
+	buffer = (BYTE*)malloc(sizeof(BYTE) * picWidth * picHeight * bits / 8);
+	hInstance = GetModuleHandle(NULL);
+
+	Draw.cbClsExtra = 0;
+	Draw.cbWndExtra = 0;
+	Draw.hCursor = LoadCursor(hInstance, IDC_ARROW);
+	Draw.hIcon = LoadIcon(hInstance, IDI_APPLICATION);
+	Draw.lpszMenuName = NULL;
+	Draw.style = WS_MINIMIZEBOX | CS_HREDRAW | CS_VREDRAW;
+	Draw.hbrBackground = (HBRUSH)COLOR_WINDOW;
+	Draw.lpfnWndProc = WindowProc;
+	Draw.lpszClassName = _T("DDraw");
+	Draw.hInstance = hInstance;
+
+	RegisterClass(&Draw);
+
+	hwnd = CreateWindow(
+		_T("DDraw"),
+		L"Draw",
+		WS_OVERLAPPEDWINDOW,
+		38,
+		20,
+		picWidth + 15,
+		picHeight + 38,
+		NULL,
+		NULL,
+		hInstance,
+		NULL
+	);
+
+	ShowWindow(hwnd, SW_SHOW);
+	UpdateWindow(hwnd);
+
+	//init bitbuffer
+	ZeroMemory(&binfo, sizeof(BITMAPINFO));
+	binfo.bmiHeader.biBitCount = bits;
+	binfo.bmiHeader.biCompression = BI_RGB;
+	binfo.bmiHeader.biHeight = -picHeight;
+	binfo.bmiHeader.biPlanes = 1;
+	binfo.bmiHeader.biSizeImage = 0;
+	binfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+	binfo.bmiHeader.biWidth = picWidth;
+
+	screen_hdc = GetDC(hwnd);
+	hCompatibleDC = CreateCompatibleDC(screen_hdc);
+	hCompatibleBitmap = CreateCompatibleBitmap(screen_hdc, picWidth, picHeight);
+	hOldBitmap = (HBITMAP)SelectObject(hCompatibleDC, hCompatibleBitmap);
+
+	while (isGameOver==false)
 	{
-		cin.get();
-		cin.get();
+		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+		{
+			TranslateMessage(&msg);
+			DispatchMessage(&msg);
+		}
+		GameLoop();
 	}
 	return 0;
 
@@ -137,11 +214,11 @@ int main()
 void GameLoop()
 {
 	CleanScreen();
-	for(int y=0;y<bmpHeight;y++)
-		for (int x = 0; x < bmpWidth; x++)
+	for(int y=0;y<picHeight;y++)
+		for (int x = 0; x < picWidth; x++)
 		{
-			Color color = Color(pBmpBuf[y * 3 * bmpWidth + x * 3 + 2], pBmpBuf[y * 3 * bmpWidth + x * 3 + 1], pBmpBuf[y * 3 * bmpWidth + x * 3]);
-			DrawPoint(x,bmpHeight- y, color);
+			Color color = Color(pBmpBuf[y * 3 * picWidth + (x+1) * 3 - 1], pBmpBuf[y * 3 * picWidth + (x + 1) * 3 - 2], pBmpBuf[y * 3 * picWidth + (x + 1) * 3-3]);
+			DrawPoint(x,picHeight- y, color);
 		}
 
 	PutBufferToScreen();
