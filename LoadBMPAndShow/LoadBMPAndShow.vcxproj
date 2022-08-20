@@ -29,6 +29,7 @@
     <ProjectGuid>{AF542C71-3320-4FE7-91C2-69AB422E0451}</ProjectGuid>
     <RootNamespace>LoadBMPAndShow</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>miniPicViewer</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

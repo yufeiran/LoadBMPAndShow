@@ -1,5 +1,6 @@
-﻿#include"LoadBMPAndShow.h"
-
+﻿
+#include"LoadBMPAndShow.h"
+#include<WinUser.h>
 
 bool readPPM(const string filepath)
 {
@@ -123,6 +124,18 @@ LRESULT CALLBACK WindowProc(
 		if (wParam == VK_ESCAPE)
 			exit(0);
 	}
+	case WM_MOUSEMOVE:
+		//#define GCL_HCURSOR         (-12)
+		//SetClassLong(hwnd, GCL_HCURSOR, (LONG)::LoadCursor(NULL, IDC_ARROW));
+		::SetCursor(::LoadCursor(NULL, IDC_ARROW));
+		char outdata[100];
+		int x = lParam & 0x0000ffff;
+		int y =picHeight- ((lParam&0xffff0000)>>16);
+		if (y < 0)y = 0;
+
+		int nowPos = y * picWidth + x;
+		sprintf(outdata, "%d,%d(%d,%d,%d)", x, y, pBmpBuf[nowPos * 3], pBmpBuf[nowPos * 3 + 1], pBmpBuf[nowPos * 3 + 2]);
+		SetWindowTextA(hwnd, outdata);
 	}
 	return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
@@ -148,8 +161,6 @@ int main(int argc,char* argv[])
 		}
 	}
 
-
-
 	buffer = (BYTE*)malloc(sizeof(BYTE) * picWidth * picHeight * bits / 8);
 	hInstance = GetModuleHandle(NULL);
 
@@ -170,10 +181,10 @@ int main(int argc,char* argv[])
 		_T("DDraw"),
 		L"Draw",
 		WS_OVERLAPPEDWINDOW,
-		38,
-		20,
-		picWidth + 15,
-		picHeight + 38,
+		300,
+		300,
+		picWidth +17,
+		picHeight+40,
 		NULL,
 		NULL,
 		hInstance,
